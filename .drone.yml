@@ -1,0 +1,16 @@
+kind: pipeline
+name: ci-pipeline
+
+steps:
+  - name: Static Analysis
+    image: maven
+    commands:
+    - mvn -e -Dmaven.repo.local=.m2 --batch-mode --settings pom.xml clean verify sonar:sonar -Dsonar.projectVersion=${DRONE_COMMIT_SHA} -Dsonar.projectKey=${DRONE_REPO_NAME} -Dsonar.projectName=${DRONE_REPO_NAME} -Dsonar.sources=. -Dsonar.scm.disabled=true -Dsonar.host.url=http://35.188.205.135:9000 -Dsonar.login=admin -Dsonar.password=^2!%\'GmN$\(_pd#?z8z.7\"\&!_=#%@
+    environment:
+      MAVEN_OPTS: -Xms512m -Xmx3g
+
+  - name: Generate SonarQube SaST report
+    image: jparnaut/sonar-report
+    commands:
+    - sonar-report --sonarurl="http://35.188.205.135:9000" --sonarcomponent="${DRONE_REPO_NAME}" --project="${DRONE_REPO_NAME}" --application="${DRONE_REPO_NAME}" --release="${DRONE_COMMIT_SHA}" --sinceleakperiod="false" --allbugs="false" > /tmp/sonar-report_sonar-report.html
+    - python /dojo_ci_cd.py --product=3 --file="/tmp/sonar-report_sonar-report.html" --scanner="SonarQube Scan" --host=http://35.188.205.135:8080 --api_key=a6166ef6903b308687a3b4d7e907a283c4a0ac0c --user=admin
